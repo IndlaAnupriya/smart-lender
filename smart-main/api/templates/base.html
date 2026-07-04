@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" x-data="app()">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SmartLender{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <div class="sidebar" :class="{ 'open': sidebarOpen }">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">SL</div>
+      <div class="sidebar-brand">Smart<span>Lender</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Main</div>
+        <a href="/" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">
+          <i class="fas fa-th-large"></i> Dashboard
+        </a>
+        <a href="/predict-page" class="nav-item {% if active_page == 'predict' %}active{% endif %}">
+          <i class="fas fa-wand-magic-sparkles"></i> Prediction
+        </a>
+        <a href="/analytics" class="nav-item {% if active_page == 'analytics' %}active{% endif %}">
+          <i class="fas fa-chart-line"></i> Analytics
+        </a>
+        <a href="/history" class="nav-item {% if active_page == 'history' %}active{% endif %}">
+          <i class="fas fa-clock-rotate"></i> History
+        </a>
+        <a href="/insights" class="nav-item {% if active_page == 'insights' %}active{% endif %}">
+          <i class="fas fa-lightbulb"></i> Insights
+          <span class="nav-badge">AI</span>
+        </a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-avatar">SA</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name">Smart Admin</div>
+        <div class="sidebar-user-role">Enterprise Platform</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-overlay" :class="{ 'show': sidebarOpen }" @click="sidebarOpen = false"></div>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-toggle" @click="sidebarOpen = !sidebarOpen">
+          <i class="fas fa-bars"></i>
+        </button>
+        <div class="topbar-title">{% block heading %}Dashboard{% endblock %}</div>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-search">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Search..." x-ref="searchInput" @keydown.escape="$refs.searchInput.blur()">
+        </div>
+        <button class="topbar-btn" @click="theme = theme === 'dark' ? 'light' : 'dark'; $dispatch('theme-change', theme)" :title="theme === 'dark' ? 'Light mode' : 'Dark mode'">
+          <i :class="theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon'"></i>
+        </button>
+        <button class="topbar-btn" id="notifBtn" onclick="toggleNotifPanel()">
+          <i class="fas fa-bell"></i>
+          <span class="topbar-dot"></span>
+        </button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <div class="notif-panel" id="notifPanel">
+    <div class="np-header">
+      <h4>Notifications</h4>
+      <button class="np-close" onclick="toggleNotifPanel()"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="np-body">
+      <div class="np-item">
+        <div class="np-icon np-green"><i class="fas fa-circle-check"></i></div>
+        <div class="np-content">
+          <span class="np-title">Prediction Completed</span>
+          <span class="np-desc">Loan eligibility prediction finished successfully</span>
+          <span class="np-time">Just now</span>
+        </div>
+      </div>
+      <div class="np-item">
+        <div class="np-icon np-blue"><i class="fas fa-rotate"></i></div>
+        <div class="np-content">
+          <span class="np-title">Model Updated</span>
+          <span class="np-desc">Random Forest model retrained with new data</span>
+          <span class="np-time">5 min ago</span>
+        </div>
+      </div>
+      <div class="np-item">
+        <div class="np-icon np-amber"><i class="fas fa-shield"></i></div>
+        <div class="np-content">
+          <span class="np-title">System Secure</span>
+          <span class="np-desc">All encryption protocols are active</span>
+          <span class="np-time">1 hour ago</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-overlay" id="notifOverlay" onclick="toggleNotifPanel()"></div>
+
+  <div class="toast" x-show="toast.show" x-transition x-text="toast.message" :class="'toast-' + toast.type" x-cloak></div>
+
+<script>
+function toggleNotifPanel() {
+  document.getElementById('notifPanel').classList.toggle('open');
+  document.getElementById('notifOverlay').classList.toggle('show');
+}
+
+function app() {
+  return {
+    sidebarOpen: false,
+    theme: localStorage.getItem('sl-theme') || 'dark',
+    toast: { show: false, message: '', type: 'success' },
+    init() {
+      document.documentElement.setAttribute('data-theme', this.theme);
+      this.$watch('theme', val => {
+        document.documentElement.setAttribute('data-theme', val);
+        localStorage.setItem('sl-theme', val);
+      });
+      document.addEventListener('theme-change', e => this.theme = e.detail);
+    },
+    showToast(msg, type = 'success') {
+      this.toast = { show: true, message: msg, type: type };
+      setTimeout(() => this.toast.show = false, 3000);
+    }
+  }
+}
+</script>
+</body>
+</html>

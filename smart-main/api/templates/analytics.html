@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% set active_page = 'analytics' %}
+{% block title %}Analytics - SmartLender{% endblock %}
+{% block heading %}Analytics{% endblock %}
+{% block content %}
+<div class="animate-slide-up">
+  <div style="margin-bottom:24px;">
+    <div class="section-title">Analytics Dashboard</div>
+    <div class="section-subtitle">Comprehensive analysis of loan predictions and model performance.</div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="glass-card stat-item">
+      <div class="stat-value" style="color:var(--accent);">{{ stats.total }}</div>
+      <div class="stat-label">Total Predictions</div>
+    </div>
+    <div class="glass-card stat-item">
+      <div class="stat-value" style="color:var(--success);">{{ stats.approval_rate }}%</div>
+      <div class="stat-label">Approval Rate</div>
+    </div>
+    <div class="glass-card stat-item">
+      <div class="stat-value" style="color:var(--danger);">{{ stats.rejected }}</div>
+      <div class="stat-label">Rejected</div>
+    </div>
+    <div class="glass-card stat-item">
+      <div class="stat-value" style="color:var(--accent);">{{ stats.model_accuracy }}</div>
+      <div class="stat-label">Model Accuracy</div>
+    </div>
+  </div>
+
+  <div class="analytics-grid">
+    <div class="glass-card analytics-full">
+      <div class="glass-card-header">
+        <div class="glass-card-title"><i class="fas fa-chart-pie"></i> Loan Status Distribution</div>
+      </div>
+      <div class="chart-container">
+        <canvas id="statusChart" height="100"></canvas>
+      </div>
+    </div>
+    <div class="glass-card analytics-full">
+      <div class="glass-card-header">
+        <div class="glass-card-title"><i class="fas fa-arrow-trend-up"></i> Prediction Trend</div>
+      </div>
+      {% if history|length > 1 %}
+      <div class="chart-container">
+        <canvas id="trendChart" height="100"></canvas>
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:40px;color:var(--text-tertiary);">
+        <i class="fas fa-chart-line" style="font-size:48px;opacity:0.3;margin-bottom:12px;"></i>
+        <p style="font-size:14px;font-weight:600;margin-bottom:4px;">No prediction history yet</p>
+        <p style="font-size:12px;margin-bottom:16px;">Run at least 2 predictions to see approval trend data.</p>
+        <a href="/predict-page" class="btn btn-primary btn-sm"><i class="fas fa-wand-magic-sparkles"></i> New Prediction</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="glass-card">
+      <div class="glass-card-header">
+        <div class="glass-card-title"><i class="fas fa-flask"></i> Model Performance</div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value" style="color:var(--success);font-size:22px;">{{ stats.model_accuracy }}</div>
+          <div class="stat-label">Accuracy</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" style="color:var(--accent);font-size:22px;">{{ stats.model_name }}</div>
+          <div class="stat-label">Active Model</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" style="color:var(--accent);font-size:22px;">Random Forest</div>
+          <div class="stat-label">Algorithm</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" style="color:var(--accent);font-size:22px;">11</div>
+          <div class="stat-label">Features</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var ctx = document.getElementById('statusChart');
+  if (ctx) {
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Approved', 'Rejected'],
+        datasets: [{
+          data: [{{ stats.approved }}, {{ stats.rejected }}],
+          backgroundColor: ['#10B981', '#EF4444'],
+          borderWidth: 0,
+          hoverOffset: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: '#94A3B8', padding: 16, font: { family: 'Inter', size: 12 } }
+          }
+        },
+        cutout: '65%'
+      }
+    });
+  }
+  var tc = document.getElementById('trendChart');
+  if (tc) {
+    var labels = [{% for h in history %}'{{ h.timestamp[:10] }}'{% if not loop.last %},{% endif %}{% endfor %}];
+    var approved = [{% for h in history %}{{ 1 if h.result == 'Approved' else 0 }}{% if not loop.last %},{% endif %}{% endfor %}];
+    var running = [];
+    var sum = 0;
+    for (var i = 0; i < approved.length; i++) {
+      sum += approved[i];
+      running.push(+(sum / (i + 1) * 100).toFixed(1));
+    }
+    new Chart(tc, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Approval Rate %',
+          data: running,
+          borderColor: '#10B981',
+          backgroundColor: 'rgba(16,185,129,0.1)',
+          fill: true,
+          tension: 0.3,
+          pointBackgroundColor: '#10B981',
+          pointRadius: 4,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            labels: { color: '#94A3B8', font: { family: 'Inter', size: 11 } }
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#64748B', font: { size: 10 } }, grid: { color: 'rgba(148,163,184,0.1)' } },
+          y: { min: 0, max: 100, ticks: { color: '#64748B', font: { size: 10 }, callback: function(v) { return v + '%'; } }, grid: { color: 'rgba(148,163,184,0.1)' } }
+        }
+      }
+    });
+  }
+});
+</script>
+{% endblock %}
